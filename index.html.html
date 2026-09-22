@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sector Frío - Mayorista LIMON</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; padding-bottom: 40px; }
+        header { background-color: #1e293b; border-bottom: 1px solid #0284c7; padding: 15px; position: sticky; top: 0; z-index: 50; display: flex; justify-content: space-between; align-items: center; }
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo h1 { font-size: 1.2rem; color: #38bdf8; }
+        .logo p { font-size: 0.75rem; color: #94a3b8; }
+        .btn-bot { background-color: #0284c7; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; }
+        main { max-width: 950px; margin: 20px auto; padding: 0 15px; }
+        .grid-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .card { background-color: #1e293b; padding: 12px; border-radius: 12px; border: 1px solid #334155; }
+        .card p { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: bold; }
+        .card .num { font-size: 1.5rem; font-weight: 900; margin-top: 4px; }
+        .num-total { color: #38bdf8; }
+        .num-units { color: #34d399; }
+        .num-out { color: #f43f5e; }
+        .num-low { color: #fbbf24; }
+        .drawer { background-color: #1e293b; border: 1px solid #38bdf8; border-radius: 12px; padding: 15px; margin-bottom: 20px; display: none; }
+        .drawer.active { display: block; }
+        .drawer-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+        .chat-box { height: 150px; overflow-y: auto; background-color: #020617; padding: 10px; border-radius: 8px; margin: 10px 0; font-family: monospace; font-size: 0.8rem; }
+        .chat-input { display: flex; gap: 8px; }
+        .chat-input input { flex: 1; background-color: #0f172a; border: 1px solid #334155; color: white; padding: 8px; border-radius: 6px; }
+        .chat-input button { background-color: #0284c7; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; }
+        .controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; margin-bottom: 15px; }
+        .search-box { flex: 1; min-width: 180px; background-color: #1e293b; border: 1px solid #334155; color: white; padding: 10px; border-radius: 8px; }
+        .filter-select { background-color: #1e293b; border: 1px solid #334155; color: white; padding: 10px; border-radius: 8px; }
+        .btn-add { background-color: #0284c7; color: white; border: none; padding: 10px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-export { background-color: #059669; color: white; border: none; padding: 10px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .table-container { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+        th { background-color: #0f172a; color: #94a3b8; padding: 10px; text-transform: uppercase; font-size: 0.7rem; border-bottom: 1px solid #334155; }
+        td { padding: 12px 10px; border-bottom: 1px solid #334155; }
+        .badge { padding: 3px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+        .badge-ok { background-color: rgba(52, 211, 153, 0.2); color: #34d399; }
+        .badge-low { background-color: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        .badge-out { background-color: rgba(244, 63, 94, 0.2); color: #f43f5e; }
+        .btn-action { width: 28px; height: 28px; border-radius: 6px; border: none; font-weight: bold; font-size: 1.1rem; cursor: pointer; color: white; }
+        .btn-plus { background-color: #059669; }
+        .btn-minus { background-color: #e11d48; }
+        .btn-date { background-color: #334155; color: #38bdf8; border: none; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; margin-top: 4px; }
+        .actions-cell { display: flex; gap: 6px; justify-content: center; }
+        .venc-tag { font-size: 0.75rem; color: #fbbf24; font-weight: bold; }
+
+        /* Modal Formulario */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 100; padding: 15px; }
+        .modal.active { display: flex; }
+        .modal-content { background: #1e293b; border: 1px solid #38bdf8; border-radius: 16px; padding: 20px; width: 100%; max-width: 450px; space-y: 12px; }
+        .modal-content h3 { color: #38bdf8; margin-bottom: 12px; font-size: 1.1rem; }
+        .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; background: #0f172a; border: 1px solid #334155; color: white; padding: 8px 10px; border-radius: 8px; font-size: 0.85rem; }
+        .modal-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
+        .btn-cancel { background: #475569; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-save { background: #0284c7; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <span style="font-size: 1.8rem;">❄️</span>
+            <div>
+                <h1>Sector Frío</h1>
+                <p>Mayorista LIMON • Control de Heladeras y Vencimientos</p>
+            </div>
+        </div>
+        <button onclick="toggleBot()" class="btn-bot">💬 Bot Frio</button>
+    </header>
+
+    <main>
+        <div class="grid-metrics">
+            <div class="card">
+                <p>Total Productos</p>
+                <div id="total-prod" class="num num-total">0</div>
+            </div>
+            <div class="card">
+                <p>Total Unidades</p>
+                <div id="total-units" class="num num-units">0</div>
+            </div>
+            <div class="card">
+                <p>Agotados (0)</p>
+                <div id="total-out" class="num num-out">0</div>
+            </div>
+            <div class="card">
+                <p>Bajo Stock</p>
+                <div id="total-low" class="num num-low">0</div>
+            </div>
+        </div>
+
+        <div id="bot-drawer" class="drawer">
+            <div class="drawer-header">
+                <h3 style="color: #38bdf8;">🤖 Bot Comandos Frecuentes</h3>
+                <button onclick="toggleBot()" style="background:none; border:none; color:#94a3b8; cursor:pointer;">✖</button>
+            </div>
+            <div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 8px;">
+                • <b>SUMAR ID CANTIDAD</b> (Ej: <span style="color:#34d399">SUMAR MAN100G 10</span>)<br>
+                • <b>RESTAR ID CANTIDAD</b> (Ej: <span style="color:#f43f5e">RESTAR MAN100G 2</span>)<br>
+                • <b>STOCK PALABRA</b> (Ej: <span style="color:#fbbf24">STOCK MANTECA</span>)
+            </div>
+            <div id="chat-box" class="chat-box">
+                <div style="color: #38bdf8;">🤖 Bot: Hola Bruno, ¿qué movimiento hacemos en la heladera hoy?</div>
+            </div>
+            <div class="chat-input">
+                <input id="bot-input" type="text" placeholder="Escribí un comando...">
+                <button onclick="sendBotMsg()">Enviar</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input id="search-input" oninput="renderTable()" type="text" placeholder="🔍 Buscar producto o ID..." class="search-box">
+            <select id="cat-filter" onchange="renderTable()" class="filter-select">
+                <option value="ALL">Todas las Categorías</option>
+                <option value="Fiambres y Quesos">Fiambres y Quesos</option>
+                <option value="Gonzalez / Don Jorge">Gonzalez / Don Jorge</option>
+                <option value="Nonna Pia">Nonna Pia</option>
+                <option value="La Serenisima">La Serenísima</option>
+                <option value="Tapamania">Tapamanía</option>
+                <option value="Pan Baires">Pan Baires</option>
+            </select>
+            <button onclick="openModal()" class="btn-add">➕ Agregar Producto</button>
+            <button onclick="exportExcel()" class="btn-export">📗 Exportar Excel</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID / Producto</th>
+                        <th>Categoría</th>
+                        <th>Vencimiento</th>
+                        <th style="text-align: center;">Stock</th>
+                        <th style="text-align: center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="inventory-table"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Modal Formulario para Nuevo Producto -->
+    <div id="add-modal" class="modal">
+        <div class="modal-content">
+            <h3>➕ Nuevo Producto - Sector Frío</h3>
+            <div class="form-group">
+                <label>ID / CÓDIGO (Ej: MAN100G):</label>
+                <input id="new-id" type="text" placeholder="Ingrese ID único">
+            </div>
+            <div class="form-group">
+                <label>NOMBRE DEL PRODUCTO:</label>
+                <input id="new-name" type="text" placeholder="Ej: QUESO TYBO X KG">
+            </div>
+            <div class="form-group">
+                <label>CATEGORÍA:</label>
+                <select id="new-cat">
+                    <option value="Fiambres y Quesos">Fiambres y Quesos</option>
+                    <option value="Gonzalez / Don Jorge">Gonzalez / Don Jorge</option>
+                    <option value="Nonna Pia">Nonna Pia</option>
+                    <option value="La Serenisima">La Serenísima</option>
+                    <option value="Tapamania">Tapamanía</option>
+                    <option value="Pan Baires">Pan Baires</option>
+                    <option value="Otros Fríos">Otros Fríos</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex:1;">
+                    <label>STOCK INICIAL:</label>
+                    <input id="new-stock" type="number" value="0" min="0">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>STOCK MÍNIMO:</label>
+                    <input id="new-min" type="number" value="5" min="1">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>FECHA VENCIMIENTO (Opcional):</label>
+                <input id="new-venc" type="text" placeholder="Ej: 15/10">
+            </div>
+            <div class="modal-btns">
+                <button onclick="closeModal()" class="btn-cancel">Cancelar</button>
+                <button onclick="saveNewProduct()" class="btn-save">Guardar Producto</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const INITIAL_STOCK = [
+            {"id": "MAN100G", "nombre": "MANTECA ALTERNATIVA X 100GR GLUCELAT", "categoria": "Fiambres y Quesos", "stock": 7, "min": 5, "venc": ""},
+            {"id": "MAN200G", "nombre": "MANTECA ALTERNATIVA X 200GR GLUCELAT", "categoria": "Fiambres y Quesos", "stock": 25, "min": 10, "venc": ""},
+            {"id": "BAR3NIN", "nombre": "BARRA LAS 3 NIÑAS", "categoria": "Fiambres y Quesos", "stock": 13, "min": 5, "venc": ""},
+            {"id": "BARSAGR", "nombre": "BARRA SAGRADA", "categoria": "Fiambres y Quesos", "stock": 18, "min": 5, "venc": ""},
+            {"id": "CRESAGR", "nombre": "CREMOSO SAGRADA", "categoria": "Fiambres y Quesos", "stock": 18, "min": 5, "venc": "7/9"},
+            {"id": "CRELACT", "nombre": "CREMOSO LACTEAR", "categoria": "Fiambres y Quesos", "stock": 20, "min": 5, "venc": ""},
+            {"id": "ROQUES", "nombre": "ROQUEFORT QUESERA", "categoria": "Fiambres y Quesos", "stock": 8, "min": 3, "venc": ""},
+            {"id": "PALORFE", "nombre": "PALETA ORFEBRE", "categoria": "Fiambres y Quesos", "stock": 24, "min": 5, "venc": ""},
+            {"id": "CHEDFET", "nombre": "CHEDDAR TONADITA FETAS", "categoria": "Fiambres y Quesos", "stock": 21, "min": 5, "venc": ""},
+            {"id": "CHEDLIQ", "nombre": "CHEDAR TONADITA LIQUIDO", "categoria": "Fiambres y Quesos", "stock": 10, "min": 3, "venc": ""},
+            {"id": "CREPUNT", "nombre": "CREMOSO PUNTA", "categoria": "Fiambres y Quesos", "stock": 88, "min": 15, "venc": ""},
+            {"id": "BARPUNT", "nombre": "BARRA PUNTA", "categoria": "Fiambres y Quesos", "stock": 5, "min": 5, "venc": ""},
+            {"id": "BARTONU", "nombre": "BARRA TONUTTI", "categoria": "Fiambres y Quesos", "stock": 20, "min": 5, "venc": ""},
+            {"id": "ROQEMP", "nombre": "ROQUE EMPERADOR", "categoria": "Fiambres y Quesos", "stock": 12, "min": 3, "venc": ""},
+            {"id": "MUZBARR", "nombre": "MUZZARELLA BARRAZA", "categoria": "Fiambres y Quesos", "stock": 16, "min": 5, "venc": ""},
+            {"id": "BARMANJ", "nombre": "BARRA MANJAR BLANCO", "categoria": "Fiambres y Quesos", "stock": 12, "min": 5, "venc": ""},
+            {"id": "CREBARR", "nombre": "CREMOSO BARRAZA", "categoria": "Fiambres y Quesos", "stock": 17, "min": 5, "venc": ""},
+            {"id": "CREMED4", "nombre": "cremoso mediterraneo x 4kg", "categoria": "Fiambres y Quesos", "stock": 12, "min": 5, "venc": ""},
+            {"id": "CREMED2", "nombre": "cremoso mediterraneo x 2kg", "categoria": "Fiambres y Quesos", "stock": 41, "min": 10, "venc": ""},
+            {"id": "MUZMED", "nombre": "muzza mediterranea", "categoria": "Fiambres y Quesos", "stock": 6, "min": 5, "venc": ""},
+            {"id": "MUZAUR", "nombre": "muzza aurora", "categoria": "Fiambres y Quesos", "stock": 16, "min": 5, "venc": "22/9"},
+            {"id": "REGNOAL", "nombre": "REGIANITO NOALSA", "categoria": "Fiambres y Quesos", "stock": 1, "min": 2, "venc": ""},
+            {"id": "ROMMIG", "nombre": "ROMANITO MIGUE", "categoria": "Fiambres y Quesos", "stock": 2, "min": 2, "venc": ""},
+            {"id": "BOCALC", "nombre": "BOCHA CALCHAQUI", "categoria": "Fiambres y Quesos", "stock": 1, "min": 2, "venc": ""},
+            {"id": "SAL42F", "nombre": "SALAMIN 42 X UNIDAD FINO", "categoria": "Fiambres y Quesos", "stock": 114, "min": 20, "venc": ""},
+            {"id": "SAL42G", "nombre": "SALAMIN 42 X UNIDAD GRUESO", "categoria": "Fiambres y Quesos", "stock": 32, "min": 10, "venc": "7/8"},
+            {"id": "BONJORGE", "nombre": "BOLON DON JORGE", "categoria": "Gonzalez / Don Jorge", "stock": 5, "min": 2, "venc": ""},
+            {"id": "SALPRIM", "nombre": "SALCHICHON PRIMAVERA", "categoria": "Gonzalez / Don Jorge", "stock": 2, "min": 2, "venc": ""},
+            {"id": "PALRIMI", "nombre": "PALETA RIMINI", "categoria": "Gonzalez / Don Jorge", "stock": 9, "min": 3, "venc": ""},
+            {"id": "COCIDIT", "nombre": "COCIDITO GONZALEZ CON CUERO", "categoria": "Gonzalez / Don Jorge", "stock": 9, "min": 3, "venc": ""},
+            {"id": "MUZMUEL", "nombre": "MUZZARELLA MUELLE", "categoria": "Fiambres y Quesos", "stock": 14, "min": 5, "venc": ""},
+            {"id": "HOLANDA", "nombre": "HOLANDA", "categoria": "Fiambres y Quesos", "stock": 2, "min": 2, "venc": ""},
+            {"id": "PANMULTI", "nombre": "MULTICEREAL PAN BAIRES", "categoria": "Pan Baires", "stock": 30, "min": 10, "venc": "25/9"},
+            {"id": "PANSALV", "nombre": "SALVADO PAN BAIRES", "categoria": "Pan Baires", "stock": 29, "min": 10, "venc": "29/9, 5/10"},
+            {"id": "PANBLAN", "nombre": "BLANCO PAN BAIRES", "categoria": "Pan Baires", "stock": 31, "min": 10, "venc": "30/9"},
+            {"id": "PANHAMB", "nombre": "HAMBURGUESA PAN BAIRES", "categoria": "Pan Baires", "stock": 25, "min": 10, "venc": "25/9, 5/10"},
+            {"id": "QUESCAMP", "nombre": "QUESO DE CAMPO MIXTA NONNA PIA", "categoria": "Nonna Pia", "stock": 45, "min": 10, "venc": ""},
+            {"id": "PROVCAZ", "nombre": "PROVOLETA CON CAZUELA NONNA PIA", "categoria": "Nonna Pia", "stock": 65, "min": 10, "venc": ""},
+            {"id": "PROVFRAC", "nombre": "PROVOLETA FRACCIONADA X4U NONNA PIA", "categoria": "Nonna Pia", "stock": 40, "min": 10, "venc": ""},
+            {"id": "LSMAN100", "nombre": "MANTECA 100GR LA SERENISIMA", "categoria": "La Serenisima", "stock": 46, "min": 10, "venc": ""},
+            {"id": "LSMAN200", "nombre": "MANTECA 200GR LA SERENISIMA", "categoria": "La Serenisima", "stock": 15, "min": 5, "venc": ""},
+            {"id": "LSDDL400", "nombre": "DULCE DE LECHE CLASICO X 400GR", "categoria": "La Serenisima", "stock": 33, "min": 10, "venc": ""},
+            {"id": "LSDDLREP", "nombre": "DULCE DE LECHE REPOSTERO 400GR", "categoria": "La Serenisima", "stock": 23, "min": 5, "venc": "30/10"},
+            {"id": "LSDDLCOL", "nombre": "DULCE DE LECHE COLONIAL X 400GR", "categoria": "La Serenisima", "stock": 29, "min": 5, "venc": "12/11"},
+            {"id": "LSCREM200", "nombre": "CREMA 200CC LA SERENISIMA", "categoria": "La Serenisima", "stock": 1, "min": 5, "venc": ""},
+            {"id": "LSCREM330C", "nombre": "CREMA 330 COCINAR", "categoria": "La Serenisima", "stock": 7, "min": 5, "venc": "13/10"},
+            {"id": "LSCREM520B", "nombre": "CREMA 520 BATIR", "categoria": "La Serenisima", "stock": 11, "min": 5, "venc": "25/10"},
+            {"id": "FINLIG290", "nombre": "FINDLANDIA LIGHT X 290GR", "categoria": "La Serenisima", "stock": 7, "min": 3, "venc": ""},
+            {"id": "FINCLA290", "nombre": "FINDLANDIA CLASICO X 290GR", "categoria": "La Serenisima", "stock": 1, "min": 3, "venc": ""},
+            {"id": "FINLIG180", "nombre": "FINDLANDIA LIGHT X 180GR", "categoria": "La Serenisima", "stock": 19, "min": 5, "venc": ""},
+            {"id": "FINREDC180", "nombre": "FINDLANDIA RED CALORIAS X 180GR", "categoria": "La Serenisima", "stock": 8, "min": 3, "venc": "23/9"},
+            {"id": "FINLIV290", "nombre": "FINDLANDIA MAS LIVIANO 290G", "categoria": "La Serenisima", "stock": 8, "min": 3, "venc": ""},
+            {"id": "QUESRAL35", "nombre": "QUESO RALLADO 35GR", "categoria": "La Serenisima", "stock": 200, "min": 30, "venc": ""},
+            {"id": "QUESRAL70", "nombre": "QUESO RALLADO 70GR", "categoria": "La Serenisima", "stock": 35, "min": 10, "venc": "11/10"},
+            {"id": "LECHLVE", "nombre": "LECHE LARGA VIDA LS ENTERA", "categoria": "La Serenisima", "stock": 14, "min": 5, "venc": ""},
+            {"id": "LECHLVD", "nombre": "LECHE LARGA VIDA LS DESCREMADA", "categoria": "La Serenisima", "stock": 9, "min": 5, "venc": ""},
+            {"id": "TAPFREIR", "nombre": "Tapas para empanadas TAPAMANIA 330g FREIR", "categoria": "Tapamania", "stock": 35, "min": 10, "venc": ""},
+            {"id": "TAPCRIOL", "nombre": "Tapas para empanadas TAPAMANIA 330g CRIOLLA", "categoria": "Tapamania", "stock": 45, "min": 10, "venc": ""},
+            {"id": "TAPHORNO", "nombre": "Tapas para empanadas TAPAMANIA 330g HORNO", "categoria": "Tapamania", "stock": 50, "min": 10, "venc": ""},
+            {"id": "PASCR330", "nombre": "Tapas para pascualina TAPAMANIA 400g CRIOLLA", "categoria": "Tapamania", "stock": 7, "min": 5, "venc": ""},
+            {"id": "PASHOR400", "nombre": "Tapas para pascualina TAPAMANIA 400g HORNO", "categoria": "Tapamania", "stock": 11, "min": 5, "venc": ""},
+            {"id": "TAPSUPHOR", "nombre": "Tapas empanadas Super TAPAMANIA 500g HORNO", "categoria": "Tapamania", "stock": 34, "min": 10, "venc": ""},
+            {"id": "TAPSUPCRI", "nombre": "Tapas empanadas Super TAPAMANIA 500g CRIOLLA", "categoria": "Tapamania", "stock": 35, "min": 10, "venc": ""},
+            {"id": "TUBUPHOR", "nombre": "Tapas empanadas Super Tubo 2kg x 4doc HORNO", "categoria": "Tapamania", "stock": 14, "min": 5, "venc": ""},
+            {"id": "TUBUCRI", "nombre": "Tapas empanadas Super Tubo 2kg x 4doc CRIOLLA", "categoria": "Tapamania", "stock": 12, "min": 5, "venc": ""},
+            {"id": "RAVJAMRIC", "nombre": "Ravioles 500g BLISTER JAMON Y RICOTA", "categoria": "Tapamania", "stock": 11, "min": 5, "venc": ""},
+            {"id": "RAVVERD", "nombre": "Ravioles 500g BLISTER VERDURA", "categoria": "Tapamania", "stock": 12, "min": 5, "venc": ""},
+            {"id": "RAV4QUES", "nombre": "Ravioles 500g BLISTER 4 QUESOS", "categoria": "Tapamania", "stock": 9, "min": 5, "venc": ""},
+            {"id": "RAVBOLVER", "nombre": "Ravioles 1kg BOLSA VERDURA", "categoria": "Tapamania", "stock": 13, "min": 5, "venc": ""},
+            {"id": "RAVBOLPOL", "nombre": "Ravioles 1kg BOLSA POLLO VERDURA", "categoria": "Tapamania", "stock": 12, "min": 5, "venc": ""},
+            {"id": "RAVBOL4Q", "nombre": "Ravioles 1kg BOLSA 4 QUESOS", "categoria": "Tapamania", "stock": 20, "min": 5, "venc": ""},
+            {"id": "RAVBOLRIC", "nombre": "Ravioles 1kg BOLSA RICOTA Y JAMON", "categoria": "Tapamania", "stock": 20, "min": 5, "venc": ""},
+            {"id": "GNOQ500", "nombre": "Ñoquis 500g BLISTER", "categoria": "Tapamania", "stock": 6, "min": 3, "venc": ""},
+            {"id": "GNOQ1KG", "nombre": "Ñoquis 1Kg BOLSA", "categoria": "Tapamania", "stock": 9, "min": 3, "venc": ""},
+            {"id": "CRESALUT", "nombre": "CREMOSO X SALUT", "categoria": "Fiambres y Quesos", "stock": 0, "min": 5, "venc": ""},
+            {"id": "SALPRIMJ", "nombre": "SALCHICHON PRIMAVERA CON JAMON", "categoria": "Gonzalez / Don Jorge", "stock": 0, "min": 2, "venc": ""},
+            {"id": "CRECORB", "nombre": "CREMOSO CORBAI", "categoria": "Fiambres y Quesos", "stock": 0, "min": 5, "venc": ""},
+            {"id": "MUZNORT", "nombre": "MUZZA NORTE", "categoria": "Fiambres y Quesos", "stock": 0, "min": 5, "venc": ""},
+            {"id": "PORTSAL", "nombre": "PORT SALUD", "categoria": "Fiambres y Quesos", "stock": 0, "min": 5, "venc": ""},
+            {"id": "PAL42", "nombre": "PALETA 42", "categoria": "Fiambres y Quesos", "stock": 0, "min": 5, "venc": ""},
+            {"id": "SARFRES", "nombre": "SARDO FRESCO", "categoria": "Fiambres y Quesos", "stock": 0, "min": 3, "venc": ""},
+            {"id": "SARNEG", "nombre": "SARDO NEGRO MELINCUE", "categoria": "Fiambres y Quesos", "stock": 0, "min": 3, "venc": ""},
+            {"id": "PROVPINT", "nombre": "PROVOLETA TRAD PINTADA", "categoria": "Nonna Pia", "stock": 0, "min": 5, "venc": ""},
+            {"id": "PROVSINCAZ", "nombre": "PROVOLETA SIN CAZUELA XUNIDAD", "categoria": "Nonna Pia", "stock": 0, "min": 5, "venc": ""},
+            {"id": "SARTOLD", "nombre": "SARDO LOS TOLDOS", "categoria": "Fiambres y Quesos", "stock": 0, "min": 3, "venc": ""},
+            {"id": "CANCALC", "nombre": "CANON CALCHAQUI", "categoria": "Fiambres y Quesos", "stock": 0, "min": 2, "venc": ""},
+            {"id": "LOMAHUM", "nombre": "LOMITO AHUMADO C/HIERBAS Y ROMERO", "categoria": "Fiambres y Quesos", "stock": 0, "min": 2, "venc": ""},
+            {"id": "LSDDL250", "nombre": "DULCE DE LECHE CLASICO X 250GR", "categoria": "La Serenisima", "stock": 0, "min": 5, "venc": ""},
+            {"id": "LSDDLCOL250", "nombre": "DULCE DE LECHE COLONIAL X 250GR", "categoria": "La Serenisima", "stock": 0, "min": 5, "venc": "15/11"},
+            {"id": "LSCREM330B", "nombre": "CREMA 330 BATIR", "categoria": "La Serenisima", "stock": 0, "min": 5, "venc": ""},
+            {"id": "LSCREM520C", "nombre": "CREMA 520 COCINAR", "categoria": "La Serenisima", "stock": 0, "min": 5, "venc": ""},
+            {"id": "FINCLA180", "nombre": "FINDLANDIA CLASICO X 180GR", "categoria": "La Serenisima", "stock": 0, "min": 5, "venc": ""},
+            {"id": "FINREDC290", "nombre": "FINDLANDIA RED CALORIAS X 290GR", "categoria": "La Serenisima", "stock": 0, "min": 3, "venc": ""},
+            {"id": "RAVPOLVER500", "nombre": "Ravioles 500g BLISTER POLLO Y VERDURA", "categoria": "Tapamania", "stock": 0, "min": 5, "venc": ""}
+        ];
+
+        let stockData = JSON.parse(localStorage.getItem('limon_frio_stock_v2')) || INITIAL_STOCK;
+
+        function saveData() {
+            localStorage.setItem('limon_frio_stock_v2', JSON.stringify(stockData));
+            updateMetrics();
+        }
+
+        function updateMetrics() {
+            document.getElementById('total-prod').innerText = stockData.length;
+            document.getElementById('total-units').innerText = stockData.reduce((acc, p) => acc + p.stock, 0);
+            document.getElementById('total-out').innerText = stockData.filter(p => p.stock === 0).length;
+            document.getElementById('total-low').innerText = stockData.filter(p => p.stock > 0 && p.stock <= p.min).length;
+        }
+
+        function renderTable() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const cat = document.getElementById('cat-filter').value;
+            const tbody = document.getElementById('inventory-table');
+            tbody.innerHTML = '';
+
+            const filtered = stockData.filter(p => {
+                const matchSearch = p.nombre.toLowerCase().includes(search) || p.id.toLowerCase().includes(search);
+                const matchCat = cat === 'ALL' || p.categoria === cat;
+                return matchSearch && matchCat;
+            });
+
+            filtered.forEach(p => {
+                let badge = '<span class="badge badge-ok">OK</span>';
+                if(p.stock === 0) {
+                    badge = '<span class="badge badge-out">AGOTADO</span>';
+                } else if(p.stock <= p.min) {
+                    badge = '<span class="badge badge-low">BAJO</span>';
+                }
+
+                const vencDisplay = p.venc ? `<span class="venc-tag">📅 ${p.venc}</span>` : `<span style="color:#64748b; font-size:0.75rem;">Sin fecha</span>`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div style="font-weight:bold; color:#f8fafc;">${p.nombre}</div>
+                        <div style="font-size:0.75rem; color:#38bdf8; font-family:monospace;">ID: ${p.id}</div>
+                    </td>
+                    <td style="font-size:0.75rem; color:#94a3b8;">${p.categoria}</td>
+                    <td>
+                        ${vencDisplay}<br>
+                        <button onclick="editVenc('${p.id}')" class="btn-date">✎ Editar</button>
+                    </td>
+                    <td style="text-align:center;">
+                        <span style="font-size:1.1rem; font-weight:bold; ${p.stock === 0 ? 'color:#f43f5e;' : 'color:#f8fafc;'}">${p.stock}</span>
+                        <div style="margin-top:2px;">${badge}</div>
+                    </td>
+                    <td style="text-align:center;">
+                        <div class="actions-cell">
+                            <button onclick="changeStock('${p.id}', -1)" class="btn-action btn-minus">-</button>
+                            <button onclick="changeStock('${p.id}', 1)" class="btn-action btn-plus">+</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            updateMetrics();
+        }
+
+        function openModal() {
+            document.getElementById('add-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('add-modal').classList.remove('active');
+            document.getElementById('new-id').value = '';
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-stock').value = '0';
+            document.getElementById('new-min').value = '5';
+            document.getElementById('new-venc').value = '';
+        }
+
+        function saveNewProduct() {
+            const id = document.getElementById('new-id').value.trim().toUpperCase();
+            const nombre = document.getElementById('new-name').value.trim().toUpperCase();
+            const categoria = document.getElementById('new-cat').value;
+            const stock = parseInt(document.getElementById('new-stock').value) || 0;
+            const min = parseInt(document.getElementById('new-min').value) || 5;
+            const venc = document.getElementById('new-venc').value.trim();
+
+            if(!id || !nombre) {
+                alert('Por favor complete el ID y el Nombre del Producto.');
+                return;
+            }
+
+            if(stockData.some(p => p.id === id)) {
+                alert('El ID ingresado ya existe. Por favor use uno diferente.');
+                return;
+            }
+
+            stockData.push({ id, nombre, categoria, stock, min, venc });
+            saveData();
+            renderTable();
+            closeModal();
+        }
+
+        function editVenc(id) {
+            const prod = stockData.find(p => p.id === id);
+            if(prod) {
+                const newDate = prompt(`Ingresá la fecha de vencimiento para ${prod.nombre}:`, prod.venc || '');
+                if(newDate !== null) {
+                    prod.venc = newDate.trim();
+                    saveData();
+                    renderTable();
+                }
+            }
+        }
+
+        function changeStock(id, qty) {
+            const prod = stockData.find(p => p.id === id);
+            if(prod) {
+                prod.stock = Math.max(0, prod.stock + qty);
+                saveData();
+                renderTable();
+            }
+        }
+
+        function toggleBot() {
+            const drawer = document.getElementById('bot-drawer');
+            drawer.classList.toggle('active');
+        }
+
+        function sendBotMsg() {
+            const input = document.getElementById('bot-input');
+            const text = input.value.trim();
+            if(!text) return;
+
+            const chat = document.getElementById('chat-box');
+            chat.innerHTML += `<div style="color:#cbd5e1; text-align:right;">👤 ${text}</div>`;
+            input.value = '';
+
+            const parts = text.split(' ');
+            const action = parts[0].toUpperCase();
+            let response = "🤖 No entendí el comando. Usá SUMAR, RESTAR o STOCK.";
+
+            if(action === 'SUMAR' || action === 'RESTAR') {
+                const id = parts[1] ? parts[1].toUpperCase() : null;
+                const qty = parseInt(parts[2]);
+                const prod = stockData.find(p => p.id === id);
+
+                if(prod && !isNaN(qty)) {
+                    const diff = action === 'SUMAR' ? qty : -qty;
+                    prod.stock = Math.max(0, prod.stock + diff);
+                    saveData();
+                    renderTable();
+                    response = `🤖 ¡Listo! ${prod.nombre} ahora tiene ${prod.stock} unidades.`;
+                } else {
+                    response = `🤖 Error: Verificá el ID del producto y la cantidad.`;
+                }
+            } else if(action === 'STOCK') {
+                const query = parts.slice(1).join(' ').toLowerCase();
+                const matches = stockData.filter(p => p.nombre.toLowerCase().includes(query) || p.id.toLowerCase().includes(query));
+                if(matches.length > 0) {
+                    response = `🤖 Encontrados:<br>` + matches.map(m => `• ${m.nombre} (${m.id}): <b>${m.stock} un</b> ${m.venc ? '(Vence: '+m.venc+')' : ''}`).join('<br>');
+                } else {
+                    response = `🤖 No encontré productos con "${query}".`;
+                }
+            }
+
+            chat.innerHTML += `<div style="color:#38bdf8;">🤖 ${response}</div>`;
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function exportExcel() {
+            let tableHtml = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    th { background-color: #0f172a; color: #ffffff; font-weight: bold; text-align: left; padding: 8px; border: 1px solid #334155; }
+                    td { padding: 6px; border: 1px solid #cbd5e1; vertical-align: middle; }
+                    .ok { background-color: #d1fae5; color: #065f46; font-weight: bold; text-align: center; }
+                    .bajo { background-color: #fef3c7; color: #92400e; font-weight: bold; text-align: center; }
+                    .agotado { background-color: #ffe4e6; color: #9f1239; font-weight: bold; text-align: center; }
+                    .num { text-align: center; font-weight: bold; }
+                    .title { font-size: 16pt; font-weight: bold; color: #0284c7; }
+                </style>
+            </head>
+            <body>
+                <div class="title">Autoservicio Mayorista LIMON - Sector Frío</div>
+                <p><b>Reporte de Stock y Vencimientos</b> - Fecha: ${new Date().toLocaleDateString('es-AR')}</p>
+                <br>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Vencimiento</th>
+                            <th>Stock Actual</th>
+                            <th>Stock Mínimo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            stockData.forEach(p => {
+                let estadoClass = p.stock === 0 ? 'agotado' : (p.stock <= p.min ? 'bajo' : 'ok');
+                let estadoTexto = p.stock === 0 ? 'AGOTADO' : (p.stock <= p.min ? 'BAJO STOCK' : 'OK');
+                
+                tableHtml += `
+                    <tr>
+                        <td><b>${p.id}</b></td>
+                        <td>${p.nombre}</td>
+                        <td>${p.categoria}</td>
+                        <td style="text-align:center;">${p.venc || '-'}</td>
+                        <td class="num">${p.stock}</td>
+                        <td class="num">${p.min}</td>
+                        <td class="${estadoClass}">${estadoTexto}</td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                    </tbody>
+                </table>
+            </body>
+            </html>
+            `;
+
+            const blob = new Blob(['\ufeff' + tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `Stock_Sector_Frio_${new Date().toISOString().slice(0,10)}.xls`);
+            a.click();
+        }
+
+        renderTable();
+    </script>
+</body>
+</html>
